@@ -6,7 +6,7 @@ export default function ClientDetail({ clientId, onBack }) {
   const [client, setClient] = useState(null)
   const [commandes, setCommandes] = useState([])
   const [showCommandeForm, setShowCommandeForm] = useState(false)
-  
+
   // Champs de formulaire
   const [modele, setModele] = useState('')
   const [description, setDescription] = useState('')
@@ -54,7 +54,7 @@ export default function ClientDetail({ clientId, onBack }) {
       .select('*, mensurations(*)')
       .eq('id', clientId)
       .single()
-    
+
        if (error) {
       console.error(error)
     } else {
@@ -70,7 +70,7 @@ export default function ClientDetail({ clientId, onBack }) {
       .select('*')
       .eq('client_id', clientId)
       .order('created_at', { ascending: false })
-    
+
         setCommandes(cmdData || [])
 
     // Générer les URLs temporaires des photos des commandes
@@ -96,13 +96,13 @@ export default function ClientDetail({ clientId, onBack }) {
   const handleCreateCommande = async (e) => {
     e.preventDefault()
     const { data: { user } } = await supabase.auth.getUser()
-    
+
     const { error } = await supabase.from('commandes').insert([{
       client_id: clientId,
       user_id: user.id,
-      modele, description, 
-      prix_total: prix, 
-      acompte: acompte || 0, 
+      modele, description,
+      prix_total: prix,
+      acompte: acompte || 0,
       date_prevue: datePrevue,
       photo_modele_url: photoModele,
       photo_tissu_url: photoTissu,
@@ -123,7 +123,7 @@ export default function ClientDetail({ clientId, onBack }) {
       .from('commandes')
       .update({ statut: newStatus })
       .eq('id', cmdId)
-    
+
     if (error) alert(error.message)
     else fetchClientData()
   }
@@ -135,7 +135,7 @@ export default function ClientDetail({ clientId, onBack }) {
       .from('commandes')
       .update({ deuxieme_versement: montant })
       .eq('id', cmdId)
-    
+
     if (error) alert(error.message)
     else {
       alert('Versement mis à jour !')
@@ -151,13 +151,21 @@ export default function ClientDetail({ clientId, onBack }) {
   return (
     <div>
       <button onClick={onBack} className="mb-4 text-blue-600">&larr; Retour aux clients</button>
-      
+
       <div className="bg-white p-4 rounded-lg shadow mb-4">
+
+      {clientPhotoUrl && (
+  <img
+    src={clientPhotoUrl}
+    alt="Photo du client"
+    className="w-20 h-20 rounded-full object-cover mb-3"
+  />
+)}
         <h2 className="text-2xl font-bold text-gray-800">{client.nom}</h2>
         <div className="flex items-center gap-2 mt-2">
-          <a 
-            href={`https://wa.me/${phoneClean}`} 
-            target="_blank" rel="noreferrer" 
+          <a
+            href={`https://wa.me/${phoneClean}`}
+            target="_blank" rel="noreferrer"
             className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 flex items-center gap-1"
           >
             💬 Appeler sur WhatsApp
@@ -191,17 +199,17 @@ export default function ClientDetail({ clientId, onBack }) {
           <h3 className="font-bold text-gray-700">Nouvelle Commande</h3>
           <input type="text" placeholder="Nom du modèle" value={modele} onChange={(e)=>setModele(e.target.value)} required className="w-full p-2 border rounded" />
           <textarea placeholder="Description / Instructions" value={description} onChange={(e)=>setDescription(e.target.value)} className="w-full p-2 border rounded"></textarea>
-          
+
           <ImageUpload label="Photo du modèle" folder="modeles" onUploadSuccess={setPhotoModele} />
           <ImageUpload label="Photo du tissu/pagne" folder="tissus" onUploadSuccess={setPhotoTissu} />
-          
+
           <div className="flex gap-2">
             <input type="number" placeholder="Prix total (FCFA)" value={prix} onChange={(e)=>setPrix(e.target.value)} required className="w-1/2 p-2 border rounded" />
             <input type="number" placeholder="Acompte (FCFA)" value={acompte} onChange={(e)=>setAcompte(e.target.value)} className="w-1/2 p-2 border rounded" />
           </div>
-          
+
           <input type="date" value={datePrevue} onChange={(e)=>setDatePrevue(e.target.value)} className="w-full p-2 border rounded" />
-          
+
           <div className="flex gap-2">
             <button type="submit" className="flex-1 bg-blue-600 text-white p-2 rounded font-semibold">Valider</button>
             <button type="button" onClick={() => setShowCommandeForm(false)} className="flex-1 bg-gray-200 text-gray-800 p-2 rounded font-semibold">Annuler</button>
@@ -225,7 +233,7 @@ export default function ClientDetail({ clientId, onBack }) {
 
               const msg = `Bonjour ${client.nom} 👋🏾, votre commande "${cmd.modele}" est ${statutText}. Il vous reste à payer : ${cmd.reste} FCFA. Merci pour votre confiance !`;
               const waLink = `https://wa.me/${phoneClean}?text=${encodeURIComponent(msg)}`;
-              
+
               return (
                 <div key={cmd.id} className="bg-white p-4 rounded-lg shadow">
                   <div className="flex justify-between items-start">
@@ -233,8 +241,8 @@ export default function ClientDetail({ clientId, onBack }) {
                       <h4 className="font-bold text-gray-800">{cmd.modele}</h4>
                       <p className="text-xs text-gray-500">Livraison: {cmd.date_prevue || 'Non définie'}</p>
                     </div>
-                    <select 
-                      value={cmd.statut} 
+                    <select
+                      value={cmd.statut}
                       onChange={(e) => handleStatusChange(cmd.id, e.target.value)}
                       className={`text-xs border rounded-full px-2 py-1 focus:outline-none ${
                         cmd.statut === 'Soldé' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-gray-50'
@@ -247,7 +255,7 @@ export default function ClientDetail({ clientId, onBack }) {
                       <option value="Soldé">Soldé</option>
                     </select>
                   </div>
-                  
+
                   <div className="flex gap-2 mt-3">
                     {cmd.photo_modele_url && <img src={cmd.resolved_modele_url} alt="Modèle" className="w-16 h-16 object-cover rounded" />}
                     {cmd.photo_tissu_url && <img src={cmd.resolved_tissu_url} alt="Tissu" className="w-16 h-16 object-cover rounded" />}
@@ -256,18 +264,18 @@ export default function ClientDetail({ clientId, onBack }) {
                   <div className="mt-3 text-sm border-t pt-2 space-y-2">
                     <p className="flex justify-between"><span>Total:</span> <b>{cmd.prix_total} FCFA</b></p>
                     <p className="flex justify-between"><span>1er versement:</span> <b>{cmd.acompte} FCFA</b></p>
-                    
+
                     {/* Bloc 2ème versement */}
                     <div className="flex items-center gap-2 bg-blue-50 p-2 rounded">
                       <span className="text-xs flex-1">2ème versement:</span>
-                      <input 
-                        type="number" 
-                        value={versementInputs[cmd.id] || ''} 
+                      <input
+                        type="number"
+                        value={versementInputs[cmd.id] || ''}
                         onChange={(e) => setVersementInputs({...versementInputs, [cmd.id]: e.target.value})}
                         placeholder="0"
                         className="w-20 p-1 text-xs border rounded text-center"
                       />
-                      <button 
+                      <button
                         onClick={() => handleSaveVersement(cmd.id)}
                         className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
                       >
@@ -282,9 +290,9 @@ export default function ClientDetail({ clientId, onBack }) {
                   <div className="mt-3 bg-green-50 p-2 rounded-lg border border-green-100">
                     <p className="text-xs text-gray-500 mb-1 font-semibold">📱 Aperçu du message WhatsApp :</p>
                     <p className="text-xs text-gray-700 italic mb-2">"{msg}"</p>
-                    <a 
-                      href={waLink} 
-                      target="_blank" rel="noreferrer" 
+                    <a
+                      href={waLink}
+                      target="_blank" rel="noreferrer"
                       className="w-full block text-center bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-green-600"
                     >
                       💬 Ouvrir WhatsApp pour envoyer
