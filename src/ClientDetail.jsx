@@ -19,9 +19,34 @@ export default function ClientDetail({ clientId, onBack }) {
   // État local pour le 2ème versement (mise à jour rapide)
   const [versementInputs, setVersementInputs] = useState({})
 
+    // URLs temporaires pour les photos privées
+  const [clientPhotoUrl, setClientPhotoUrl] = useState(null)
+  const [resolvedCommandes, setResolvedCommandes] = useState([])
+
   useEffect(() => {
     fetchClientData()
   }, [clientId])
+
+  const resolveImageUrl = async (path) => {
+    if (!path) return null
+
+    // Anciennes URLs publiques : on les conserve
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path
+    }
+
+    // Nouveau chemin : génération d'une URL signée temporaire
+    const { data, error } = await supabase.storage
+      .from('photos')
+      .createSignedUrl(path, 3600)
+
+    if (error) {
+      console.error('Erreur génération URL signée:', error)
+      return null
+    }
+
+    return data?.signedUrl || null
+  }
 
   const fetchClientData = async () => {
     const { data, error } = await supabase
@@ -30,8 +55,15 @@ export default function ClientDetail({ clientId, onBack }) {
       .eq('id', clientId)
       .single()
     
-    if (error) console.error(error)
-    else setClient(data)
+       if (error) {
+      console.error(error)
+    } else {
+      setClient(data)
+
+      // Générer l'URL temporaire de la photo du client
+      const clientPhoto = await resolveImageUrl(data.photo_url)
+      setClientPhotoUrl(clientPhoto)
+    }
 
     const { data: cmdData } = await supabase
       .from('commandes')
@@ -39,10 +71,22 @@ export default function ClientDetail({ clientId, onBack }) {
       .eq('client_id', clientId)
       .order('created_at', { ascending: false })
     
-    setCommandes(cmdData || [])
-    
+        setCommandes(cmdData || [])
+
+    // Générer les URLs temporaires des photos des commandes
+    const resolvedCmds = await Promise.all(
+      (cmdData || []).map(async (cmd) => ({
+        ...cmd,
+        resolved_modele_url: await resolveImageUrl(cmd.photo_modele_url),
+        resolved_tissu_url: await resolveImageUrl(cmd.photo_tissu_url)
+      }))
+    )
+
+    setResolvedCommandes(resolvedCmds)
+
     // Initialiser les inputs de versement avec les valeurs existantes
     const inputs = {}
+
     cmdData?.forEach(cmd => {
       inputs[cmd.id] = cmd.deuxieme_versement || ''
     })
@@ -167,11 +211,11 @@ export default function ClientDetail({ clientId, onBack }) {
 
       <div>
         <h3 className="font-bold text-gray-700 mb-2">Historique des commandes</h3>
-        {commandes.length === 0 ? (
+        {resolvedCommandes.length === 0 ? (
           <p className="text-gray-500 text-sm">Aucune commande pour l'instant.</p>
         ) : (
           <div className="space-y-4">
-            {commandes.map(cmd => {
+            {resolvedCommandes.map(cmd => {
               // Génération du message WhatsApp personnalisé
               let statutText = "en attente de traitement";
               if (cmd.statut === "En cours") statutText = "actuellement en cours de couture";
@@ -205,8 +249,8 @@ export default function ClientDetail({ clientId, onBack }) {
                   </div>
                   
                   <div className="flex gap-2 mt-3">
-                    {cmd.photo_modele_url && <img src={cmd.photo_modele_url} alt="Modèle" className="w-16 h-16 object-cover rounded" />}
-                    {cmd.photo_tissu_url && <img src={cmd.photo_tissu_url} alt="Tissu" className="w-16 h-16 object-cover rounded" />}
+                    {cmd.photo_modele_url && <img src={cmd.resolved_modele_url} alt="Modèle" className="w-16 h-16 object-cover rounded" />}
+                    {cmd.photo_tissu_url && <img src={cmd.resolved_tissu_url} alt="Tissu" className="w-16 h-16 object-cover rounded" />}
                   </div>
 
                   <div className="mt-3 text-sm border-t pt-2 space-y-2">
