@@ -2,6 +2,217 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import ImageUpload from './ImageUpload'
 
+// ============================================================
+// CONFIGURATION DES MENSURATIONS PAR TYPE DE VÊTEMENT
+// ============================================================
+
+const MESURES = {
+  dos: 'Dos',
+  epaule: 'Épaule',
+  epaule_manche: 'Épaule-manche',
+  poitrine: 'Poitrine',
+  tour_taille: 'Tour taille',
+  longueur_taille: 'Longueur taille',
+  bassin: 'Bassin',
+  longueur_manche: 'Longueur manche',
+  tour_manche: 'Tour manche',
+  pinces: 'Pinces',
+  longueur_totale: 'Longueur totale',
+  longueur_robe: 'Longueur robe',
+  ceinture: 'Ceinture',
+  frappe: 'Frappe',
+  cuisse: 'Cuisse',
+  genoux: 'Genoux',
+  longueur_jupe: 'Longueur jupe',
+  longueur_pantalon: 'Longueur pantalon',
+  bas: 'Bas',
+  tour_ventre: 'Tour ventre',
+  poignet: 'Poignet',
+  col: 'Col',
+  entre_jambes: 'Entre-jambes',
+  mollet: 'Mollet',
+  longueur_bermuda: 'Longueur bermuda',
+  longueur_boubou: 'Longueur boubou',
+  ampleur_boubou: 'Ampleur boubou'
+}
+
+const TYPES_VETEMENTS = {
+  Homme: {
+    'Chemise homme': [
+      'dos',
+      'epaule',
+      'poitrine',
+      'tour_taille',
+      'bassin',
+      'longueur_totale',
+      'epaule_manche',
+      'longueur_manche',
+      'tour_manche',
+      'poignet',
+      'col'
+    ],
+
+    'Veste homme': [
+      'dos',
+      'epaule',
+      'poitrine',
+      'tour_taille',
+      'bassin',
+      'longueur_totale',
+      'epaule_manche',
+      'longueur_manche',
+      'tour_manche',
+      'poignet',
+      'col'
+    ],
+
+    'Pantalon homme': [
+      'tour_ventre',
+      'tour_taille',
+      'bassin',
+      'frappe',
+      'cuisse',
+      'genoux',
+      'entre_jambes',
+      'mollet',
+      'longueur_pantalon',
+      'bas'
+    ],
+
+    'Ensemble homme': [
+      // Veste
+      'dos',
+      'epaule',
+      'poitrine',
+      'tour_taille',
+      'longueur_taille',
+      'bassin',
+      'epaule_manche',
+      'longueur_manche',
+      'tour_manche',
+      'poignet',
+      'col',
+      'longueur_totale',
+
+      // Pantalon
+      'tour_ventre',
+      'frappe',
+      'cuisse',
+      'genoux',
+      'entre_jambes',
+      'mollet',
+      'longueur_pantalon',
+      'bas'
+    ],
+
+    'Boubou africain': [
+      'dos',
+      'epaule',
+      'poitrine',
+      'tour_taille',
+      'bassin',
+      'epaule_manche',
+      'longueur_manche',
+      'tour_manche',
+      'poignet',
+      'col',
+      'longueur_boubou',
+      'ampleur_boubou'
+    ],
+
+    'Bermuda homme': [
+      'tour_ventre',
+      'tour_taille',
+      'bassin',
+      'frappe',
+      'cuisse',
+      'genoux',
+      'entre_jambes',
+      'mollet',
+      'longueur_bermuda',
+      'bas'
+    ]
+  },
+
+  Femme: {
+    'Robe femme': [
+      'dos',
+      'epaule',
+      'poitrine',
+      'tour_taille',
+      'longueur_taille',
+      'bassin',
+      'pinces',
+      'longueur_robe',
+      'epaule_manche',
+      'longueur_manche',
+      'tour_manche',
+      'poignet',
+      'col'
+    ],
+
+    'Jupe femme': [
+      'tour_taille',
+      'bassin',
+      'pinces',
+      'ceinture',
+      'longueur_jupe'
+    ],
+
+    'Pantalon femme': [
+      'tour_ventre',
+      'tour_taille',
+      'bassin',
+      'frappe',
+      'cuisse',
+      'genoux',
+      'entre_jambes',
+      'mollet',
+      'longueur_pantalon',
+      'bas'
+    ],
+
+    'Ensemble femme': [
+      'dos',
+      'epaule',
+      'poitrine',
+      'tour_taille',
+      'longueur_taille',
+      'bassin',
+      'pinces',
+      'epaule_manche',
+      'longueur_manche',
+      'tour_manche',
+      'poignet',
+      'col',
+      'longueur_totale',
+      'tour_ventre',
+      'frappe',
+      'cuisse',
+      'genoux',
+      'entre_jambes',
+      'mollet',
+      'longueur_pantalon',
+      'bas'
+    ],
+
+    'Boubou femme': [
+      'dos',
+      'epaule',
+      'poitrine',
+      'tour_taille',
+      'bassin',
+      'epaule_manche',
+      'longueur_manche',
+      'tour_manche',
+      'poignet',
+      'col',
+      'longueur_boubou',
+      'ampleur_boubou'
+    ]
+  }
+}
+
 export default function ClientDetail({ clientId, onBack }) {
   const [client, setClient] = useState(null)
   const [commandes, setCommandes] = useState([])
@@ -15,6 +226,20 @@ export default function ClientDetail({ clientId, onBack }) {
   const [datePrevue, setDatePrevue] = useState('')
   const [photoModele, setPhotoModele] = useState('')
   const [photoTissu, setPhotoTissu] = useState('')
+
+const [typeVetement, setTypeVetement] = useState('')
+const [mesures, setMesures] = useState({})
+const [modeReutilisation, setModeReutilisation] = useState('nouvelle')
+const [commandeSource, setCommandeSource] = useState(null)
+
+const handleMesureChange = (e) => {
+  const { name, value } = e.target
+
+  setMesures((prev) => ({
+    ...prev,
+    [name]: value
+  }))
+}
 
   // État local pour le 2ème versement (mise à jour rapide)
   const [versementInputs, setVersementInputs] = useState({})
@@ -65,59 +290,165 @@ export default function ClientDetail({ clientId, onBack }) {
       setClientPhotoUrl(clientPhoto)
     }
 
-    const { data: cmdData } = await supabase
-      .from('commandes')
-      .select('*')
-      .eq('client_id', clientId)
-      .order('created_at', { ascending: false })
+    const { data: cmdData, error: commandesError } = await supabase
+  .from('commandes')
+  .select(`
+    *,
+    mensurations(*)
+  `)
+  .eq('client_id', clientId)
+  .order('created_at', { ascending: false })
 
-        setCommandes(cmdData || [])
+if (commandesError) {
+  console.error('Erreur récupération commandes:', commandesError)
+  setCommandes([])
+  setResolvedCommandes([])
+  return
+}
 
-    // Générer les URLs temporaires des photos des commandes
-    const resolvedCmds = await Promise.all(
-      (cmdData || []).map(async (cmd) => ({
-        ...cmd,
-        resolved_modele_url: await resolveImageUrl(cmd.photo_modele_url),
-        resolved_tissu_url: await resolveImageUrl(cmd.photo_tissu_url)
-      }))
-    )
+setCommandes(cmdData || [])
 
-    setResolvedCommandes(resolvedCmds)
+// Générer les URLs temporaires des photos des commandes
+const resolvedCmds = await Promise.all(
+  (cmdData || []).map(async (cmd) => ({
+    ...cmd,
+    resolved_modele_url: await resolveImageUrl(cmd.photo_modele_url),
+    resolved_tissu_url: await resolveImageUrl(cmd.photo_tissu_url)
+  }))
+)
 
-    // Initialiser les inputs de versement avec les valeurs existantes
-    const inputs = {}
+setResolvedCommandes(resolvedCmds)
 
-    cmdData?.forEach(cmd => {
-      inputs[cmd.id] = cmd.deuxieme_versement || ''
-    })
-    setVersementInputs(inputs)
+// Initialiser les inputs de versement
+const inputs = {}
+
+;(cmdData || []).forEach(cmd => {
+  inputs[cmd.id] = cmd.deuxieme_versement || ''
+})
+
+setVersementInputs(inputs)
   }
 
   const handleCreateCommande = async (e) => {
     e.preventDefault()
-    const { data: { user } } = await supabase.auth.getUser()
 
-    const { error } = await supabase.from('commandes').insert([{
-      client_id: clientId,
-      user_id: user.id,
-      modele, description,
-      prix_total: prix,
-      acompte: acompte || 0,
-      date_prevue: datePrevue,
-      photo_modele_url: photoModele,
-      photo_tissu_url: photoTissu,
-      statut: 'À faire'
-    }])
+    try {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser()
 
-    if (error) alert(error.message)
-    else {
-      alert('Commande créée !')
-      setModele(''); setDescription(''); setPrix(''); setAcompte(''); setDatePrevue('')
-      setShowCommandeForm(false)
-      fetchClientData()
+    if (!user) {
+      alert('Utilisateur non connecté.')
+      return
     }
-  }
 
+    if (!typeVetement) {
+      alert('Veuillez sélectionner un type de vêtement.')
+      return
+    }
+
+    // =====================================================
+    // 1. CRÉATION DE LA COMMANDE
+    // =====================================================
+
+    const { data: commandeData, error: commandeError } =
+      await supabase
+        .from('commandes')
+        .insert([{
+          client_id: clientId,
+          user_id: user.id,
+          modele,
+          description,
+          prix_total: prix || 0,
+          acompte: acompte || 0,
+          date_prevue: datePrevue || null,
+          photo_modele_url: photoModele || null,
+          photo_tissu_url: photoTissu || null,
+          statut: 'À faire'
+        }])
+        .select()
+        .single()
+
+    if (commandeError) {
+      console.error('Erreur création commande:', commandeError)
+      alert(commandeError.message)
+      return
+    }
+
+    const commandeId = commandeData.id
+
+    // =====================================================
+    // 2. ENREGISTREMENT DES MENSURATIONS
+    // =====================================================
+
+    const champsNecessaires =
+      TYPES_VETEMENTS[client.sexe]?.[typeVetement] || []
+
+    const mesuresAEnregistrer = {}
+
+    champsNecessaires.forEach((champ) => {
+      const valeur = mesures[champ]
+
+      if (valeur !== undefined && valeur !== '') {
+        mesuresAEnregistrer[champ] = valeur
+      }
+    })
+
+    const { error: mesuresError } = await supabase
+      .from('mensurations')
+      .insert([{
+        client_id: clientId,
+        commande_id: commandeId,
+        type_vetement: typeVetement,
+        ...mesuresAEnregistrer
+      }])
+
+    if (mesuresError) {
+      console.error('Erreur mensurations:', mesuresError)
+
+      // Si les mensurations échouent, on supprime la commande
+      // pour éviter une commande incomplète.
+      await supabase
+        .from('commandes')
+        .delete()
+        .eq('id', commandeId)
+
+      alert(
+        'La commande n’a pas pu être enregistrée avec ses mensurations : ' +
+        mesuresError.message
+      )
+
+      return
+    }
+
+    // =====================================================
+    // 3. NETTOYAGE DU FORMULAIRE
+    // =====================================================
+
+    alert('Commande créée avec succès !')
+
+    setModele('')
+    setDescription('')
+    setPrix('')
+    setAcompte('')
+    setDatePrevue('')
+    setPhotoModele('')
+    setPhotoTissu('')
+    setTypeVetement('')
+    setMesures({})
+    setModeReutilisation('nouvelle')
+    setCommandeSource(null)
+
+    setShowCommandeForm(false)
+
+    // Recharger l'historique
+    fetchClientData()
+
+  } catch (error) {
+    console.error(error)
+    alert(error.message || 'Une erreur est survenue.')
+  }
+}
   const handleStatusChange = async (cmdId, newStatus) => {
     const { error } = await supabase
       .from('commandes')
@@ -174,19 +505,6 @@ export default function ClientDetail({ clientId, onBack }) {
         {client.notes && <p className="text-sm text-gray-600 mt-3 bg-gray-50 p-2 rounded">📝 {client.notes}</p>}
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow mb-4">
-        <h3 className="font-bold text-gray-700 mb-2 border-b pb-1">Mensurations</h3>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          {m.tour_poitrine && <p>Poitrine: <span className="font-semibold">{m.tour_poitrine}</span></p>}
-          {m.tour_taille && <p>Taille: <span className="font-semibold">{m.tour_taille}</span></p>}
-          {m.tour_hanche && <p>Hanche: <span className="font-semibold">{m.tour_hanche}</span></p>}
-          {m.carrure && <p>Carrure: <span className="font-semibold">{m.carrure}</span></p>}
-          {m.longueur_epaule && <p>Épaule: <span className="font-semibold">{m.longueur_epaule}</span></p>}
-          {m.tour_bras && <p>Bras: <span className="font-semibold">{m.tour_bras}</span></p>}
-          {m.longueur_vetement && <p>Longueur: <span className="font-semibold">{m.longueur_vetement}</span></p>}
-          {m.autres && <p className="col-span-2">Autres: <span className="font-semibold">{m.autres}</span></p>}
-        </div>
-      </div>
 
       {!showCommandeForm && (
         <button onClick={() => setShowCommandeForm(true)} className="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold mb-4 hover:bg-blue-700">
@@ -197,6 +515,181 @@ export default function ClientDetail({ clientId, onBack }) {
       {showCommandeForm && (
         <form onSubmit={handleCreateCommande} className="bg-white p-4 rounded-lg shadow mb-4 space-y-3">
           <h3 className="font-bold text-gray-700">Nouvelle Commande</h3>
+
+          <div>
+  <label className="block text-sm font-semibold text-gray-700 mb-1">
+    Type de vêtement
+  </label>
+
+  <select
+    value={typeVetement}
+    onChange={(e) => {
+  setTypeVetement(e.target.value)
+}}
+    required
+    className="w-full p-2 border rounded"
+  >
+    <option value="">
+      Sélectionner un type de vêtement
+    </option>
+
+    {client.sexe &&
+      Object.keys(TYPES_VETEMENTS[client.sexe] || {}).map((type) => (
+        <option key={type} value={type}>
+          {type}
+        </option>
+      ))}
+  </select>
+
+  {!client.sexe && (
+    <p className="text-xs text-orange-600 mt-1">
+      Le sexe du client doit être renseigné pour choisir
+      automatiquement les types de vêtements.
+    </p>
+  )}
+</div>
+
+{/* =====================================================
+    SOURCE DES MENSURATIONS
+===================================================== */}
+
+{typeVetement && (
+  <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-3">
+
+    <h4 className="font-bold text-blue-800 mb-2">
+      📏 Source des mensurations
+    </h4>
+
+    <div className="flex gap-4 mb-3">
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="radio"
+          name="modeReutilisation"
+          value="nouvelle"
+          checked={modeReutilisation === 'nouvelle'}
+          onChange={() => {
+            setModeReutilisation('nouvelle')
+            setCommandeSource(null)
+          }}
+        />
+        Nouvelles mensurations
+      </label>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="radio"
+          name="modeReutilisation"
+          value="ancienne"
+          checked={modeReutilisation === 'ancienne'}
+          onChange={() => setModeReutilisation('ancienne')}
+        />
+        Réutiliser une ancienne commande
+      </label>
+
+    </div>
+
+    {modeReutilisation === 'ancienne' && (
+      <div>
+
+        <label className="block text-xs font-semibold text-gray-600 mb-1">
+          Choisir une ancienne commande
+        </label>
+
+        <select
+          value={commandeSource?.id || ''}
+          onChange={(e) => {
+
+            const commande = commandes.find(
+              cmd => cmd.id === e.target.value
+            )
+
+            setCommandeSource(commande || null)
+
+            if (commande?.mensurations?.length) {
+
+              const ancienneMesure = commande.mensurations[0]
+
+              setMesures(prev => ({
+                ...prev,
+                ...ancienneMesure
+              }))
+            }
+          }}
+          className="w-full p-2 border rounded bg-white"
+        >
+
+          <option value="">
+            Sélectionner une ancienne commande
+          </option>
+
+          {commandes
+            .filter(cmd => cmd.mensurations?.length)
+            .map(cmd => {
+
+              const mesure = cmd.mensurations[0]
+
+              return (
+                <option key={cmd.id} value={cmd.id}>
+                  {mesure?.type_vetement || cmd.modele || 'Commande'}
+                  {' — '}
+                  {new Date(cmd.created_at).toLocaleDateString('fr-FR')}
+                </option>
+              )
+            })}
+
+        </select>
+
+        {commandeSource && (
+          <p className="text-xs text-blue-700 mt-2">
+            ✓ Mensurations chargées depuis cette ancienne commande.
+            Vous pouvez maintenant les modifier.
+          </p>
+        )}
+
+      </div>
+    )}
+
+  </div>
+)}
+
+{/* =====================================================
+    MENSURATIONS DE LA COMMANDE
+===================================================== */}
+
+{typeVetement && (
+  <div className="border-t pt-4">
+    <h4 className="font-bold text-gray-700 mb-1">
+      Mensurations
+    </h4>
+
+    <p className="text-xs text-gray-500 mb-3">
+      Mensurations nécessaires pour : <strong>{typeVetement}</strong>
+    </p>
+
+    <div className="grid grid-cols-2 gap-2">
+      {(TYPES_VETEMENTS[client.sexe]?.[typeVetement] || []).map(
+        (champ) => (
+          <div key={champ}>
+            <label className="block text-xs text-gray-600 mb-1">
+              {MESURES[champ]}
+            </label>
+
+            <input
+              type="number"
+              step="0.1"
+              name={champ}
+              value={mesures[champ] || ''}
+              onChange={handleMesureChange}
+              placeholder="cm"
+              className="w-full p-2 border rounded"
+            />
+          </div>
+        )
+      )}
+    </div>
+  </div>
+)}
           <input type="text" placeholder="Nom du modèle" value={modele} onChange={(e)=>setModele(e.target.value)} required className="w-full p-2 border rounded" />
           <textarea placeholder="Description / Instructions" value={description} onChange={(e)=>setDescription(e.target.value)} className="w-full p-2 border rounded"></textarea>
 
@@ -255,6 +748,48 @@ export default function ClientDetail({ clientId, onBack }) {
                       <option value="Soldé">Soldé</option>
                     </select>
                   </div>
+{/* Type de vêtement */}
+{cmd.mensurations?.[0] && (
+  <div className="mt-3 bg-blue-50 border border-blue-100 rounded-lg p-3">
+    <p className="text-sm font-semibold text-blue-800">
+      👕 Type de vêtement :
+      <span className="ml-1">
+        {cmd.mensurations[0].type_vetement}
+      </span>
+    </p>
+  </div>
+)}
+
+{/* Mensurations utilisées pour cette commande */}
+{cmd.mensurations?.[0] && (
+  <div className="mt-3 bg-gray-50 border rounded-lg p-3">
+    <h5 className="font-bold text-gray-700 mb-2">
+      📏 Mensurations de cette commande
+    </h5>
+
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+      {Object.entries(cmd.mensurations[0])
+        .filter(([champ, valeur]) =>
+          champ !== 'id' &&
+          champ !== 'client_id' &&
+          champ !== 'commande_id' &&
+          champ !== 'type_vetement' &&
+          champ !== 'created_at' &&
+          champ !== 'updated_at' &&
+          valeur !== null &&
+          valeur !== ''
+        )
+        .map(([champ, valeur]) => (
+          <p key={champ}>
+            <span className="text-gray-600">
+              {MESURES[champ] || champ} :
+            </span>{' '}
+            <strong>{valeur} cm</strong>
+          </p>
+        ))}
+    </div>
+  </div>
+)}
 
                   <div className="flex gap-2 mt-3">
                     {cmd.photo_modele_url && <img src={cmd.resolved_modele_url} alt="Modèle" className="w-16 h-16 object-cover rounded" />}
